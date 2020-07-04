@@ -4,31 +4,23 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv/config');
+var db = require('./models/index.js');
 const bodyParser = require('body-parser');
 const app = express();
-
+const authCheckMiddleware = require('./auth/isAuthenticated')
 /****************Import Routes*****************/
 const todoRoute = require('./routes/todo');
+const authRoute = require('./routes/auth');
 
 /****************Middleware*****************/
 app.use(bodyParser.json());
 app.use(cors());
-app.use('/todo',todoRoute);
+app.use('/api', authCheckMiddleware);
 
-/****************Home Page Route ****************/
-app.get('/', (req,res)=>{
-    console.log('home page');
-    res.send('home page');
-})
-
-/****************Connect DB ****************/
-
-mongoose.connect(process.env.DB_CONNECTION,{ useNewUrlParser: true,useUnifiedTopology: true})
-        .then(() => console.log('MongoDB Connected…'))
-        .catch(err => console.log(err))
+app.use('/auth',authRoute);
+app.use('/api/todo',todoRoute);
 
 const port = process.env.PORT || 3000;
-
 app.listen(port,() => {
     console.log(`server running on port ${port}`)
 });
