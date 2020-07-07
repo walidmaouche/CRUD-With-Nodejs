@@ -12,7 +12,7 @@ function isAutenticated (req, res ,next){
     jwt.verify(token,process.env.TOKEN_SECRET,(err , user)=>{
         if(err) return res.status(403).json(err); 
 
-        req.user = user;
+        req.user = {'id':user.data.id,'email':user.data.email,'username':user.data.username};
         next();
     });
 }

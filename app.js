@@ -18,7 +18,7 @@ app.use(cors());
 app.use('/api', authCheckMiddleware);
 
 app.use('/auth',authRoute);
-app.use('/api/todo',todoRoute);
+app.use('/api',todoRoute);
 
 const port = process.env.PORT || 3000;
 app.listen(port,() => {

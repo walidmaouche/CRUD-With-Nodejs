@@ -2,64 +2,32 @@ const express = require('express');
 
 const router = express.Router();
 
-const todo = require('../models/Todo');
+//const todo = require('../models/Todo');
+const todo = require('../controllers/todoController');
 
 //show all tasks
-router.get('/',async (req,res)=>{
-
-    try{
-        const tasks = await todo.find();
-        if (!tasks) res.status(400).send("No Task Found");
-        res.status(200).send(tasks);
-    }
-    catch(err){
-        res.status(500).send(err);
-    }
-
+router.get('/todos',async (req,res)=>{
+    const result = await todo.index(req.user.id);
+    return res.status(result.status).json(result);
 })
 
 // show selected task
-router.get('/:taskId',async (req,res)=>{
-
-    try{
-        const task = await todo.findById({_id : req.params.taskId});
-
-        if (!task) res.status(404).send("No Task Found");
-        
-        res.status(200).send(task);
-
-    }catch(err){
-        res.status(500).send(err)
-    }
+router.get('/todos/:taskId',async (req,res)=>{
+    const result = await todo.show(req.params.taskId,req.user.id);
+    return res.status(result.status).json(result);
 })
 
 // add new task
-router.post('/add',async (req,res)=>{
+router.post('/todos',async (req,res)=>{
     console.log('add route');
     console.log(req.body);
 
-    const data = req.body;
-    const todoData = new todo({
-        title         : data.title,
-        description   : data.description,
-        priority      : data.priority,
-        created_by    : data.created_by,
-        associated_to : data.associated_to
-    });
-
-    try{
-        const savedTask = await todoData.save();
-        res.status(200).json(savedTask);
-    }
-    catch(err){
-        res.status(500).json({message : err});
-    }
-    
-
+    const result = await todo.store(req.body,req.user.id);
+    return res.status(result.status).json(result);
 })
 
 //update task
-router.patch('/:taskId',async (req,res)=>{
+router.patch('/todos/:taskId',async (req,res)=>{
     
     try{
         todo.updateOne({_id : req.params.taskId},{$set:req.body},function(err,result){
@@ -76,7 +44,7 @@ router.patch('/:taskId',async (req,res)=>{
 })
 
 //delete task
-router.delete('/:taskId',async (req,res)=>{
+router.delete('/todos/:taskId',async (req,res)=>{
 
     try{
         const task = await todo.findByIdAndDelete(req.params.taskId);

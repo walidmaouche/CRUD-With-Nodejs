@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-
 const TodoSchema = mongoose.Schema({
     title : {
         type: String,
@@ -15,8 +14,7 @@ const TodoSchema = mongoose.Schema({
         required : false
     },
     created_by : {
-        type: Number,
-        required : true
+        type: mongoose.Types.ObjectId, ref: 'User',    
     },
     associated_to : {
         type: Number,
