@@ -7,7 +7,7 @@ require('dotenv/config');
 var db = require('./models/index.js');
 const bodyParser = require('body-parser');
 const app = express();
-const authCheckMiddleware = require('./auth/isAuthenticated')
+const authCheckMiddleware = require('./middleware/auth/isAuthenticated')
 /****************Import Routes*****************/
 const todoRoute = require('./routes/todo');
 const authRoute = require('./routes/auth');

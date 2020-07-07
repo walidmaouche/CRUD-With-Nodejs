@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 var validator = require('validator');
 const bcrypt = require('bcryptjs');
 
-const auth = require('../controllers/authController');
+
 // function to validate Login form
 function validateLoginForm(payload) {
     const errors = {};
@@ -33,10 +33,10 @@ function validateLoginForm(payload) {
       errors
     };
   }
-  
-  //function to validate signup form
 
-  function validateSignupForm(payload) {
+//function to validate signup form
+
+function validateSignupForm(payload) {
     const errors = {};
     let isFormValid = true;
     let message = '';
@@ -65,7 +65,7 @@ function validateLoginForm(payload) {
       message,
       errors
     };
-  }
+}
 
 //function to generate token
 
@@ -83,10 +83,9 @@ function generateToken(payload){
 
 //test if user exist
 
- const isUserExist = async (email,username) => {
+async function isUserExist(email,username) {
 
     exist = false;
-
     const isEmailExist = await User.findOne({email : email});
 
     if(isEmailExist != null)
@@ -100,46 +99,35 @@ function generateToken(payload){
     return exist;
 }
 
-//Login user
+// Save new user
+async function saveNewUser(user){
 
-router.post('/signin',async (req,res)=>{
+    const savedUser = await user.save();
+    const token = generateToken(savedUser);
+    return {success : true,status :200,message:'User created successfully',token,'user' : savedUser};        
+}
 
-    const validationResult = validateLoginForm(req.body);
+// function sign Up
+async function signUp(data){
+    const validationResult = validateSignupForm(data);
 
-    if(!validationResult.success){
-        return res.status(400).json({
-            success: false,
-            message: validationResult.message,
-            errors: validationResult.errors
-        });
-    }
-
+    if(!validationResult.success)
+        return {success : false,status :400,message : validationResult.message,errors: validationResult.errors};
+    
     try{
-        const user = await User.findOne({email: req.body.email});
+        const isExist = await isUserExist(data.email , data.username);
+        if(isExist) return {success : false,status :400,message : "User already Exist"};
+        const hashedPassword = await bcrypt.hash(data.password, 10);
+        const userData = new User({username : data.username,email : data.email,password : hashedPassword});
+        const savedUser = await saveNewUser(userData);
 
-        const isMatch = await bcrypt.compare(req.body.password,user.password);
-        if (!user || !isMatch) res.status(400).json({success : false , message : "Credentials Error"});
-
-        const token = generateToken(user);
-        res.status(200).json({
-            success : true,
-            token,
-            user
-        });
+        return savedUser;       
     }
     catch(err){
-        res.status(500).send(err);
+        return {success: false,status:500,message : err};
     }
 
-})
+    
+}
 
-
-// save user
-router.post('/signup',async (req,res)=>{
-
-  const result = await auth.signUp(req.body);
-  return res.status(result.status).json(result);
-  
-})
-
-module.exports = router;
+module.exports.signUp = signUp;
