@@ -1,6 +1,4 @@
-const express = require('express');
 require('dotenv/config');
-const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 var validator = require('validator');
@@ -126,8 +124,30 @@ async function signUp(data){
     catch(err){
         return {success: false,status:500,message : err};
     }
+}
 
-    
+async function signIn(payload){
+
+    const email    = payload.email;
+    const password = payload.password;
+    const validationResult = validateLoginForm(payload);
+
+    if(!validationResult.success)
+        return {success: false,status:400,message: validationResult.message,errors: validationResult.errors};
+
+    try{
+        const user = await User.findOne({email: email});
+        const isMatch = await bcrypt.compare(password,user.password);
+
+        if (!user || !isMatch) return {success : false ,status:400, message : "Credentials Error"};
+
+        const token = generateToken(user);
+        return {success : true,status:200,token,user};
+    }
+    catch(err){
+        return {success:false, status:500 ,message:err};
+    }
 }
 
 module.exports.signUp = signUp;
+module.exports.signIn = signIn;
