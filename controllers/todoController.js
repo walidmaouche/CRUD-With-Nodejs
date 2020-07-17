@@ -3,7 +3,7 @@ const todo = require('../models/Todo');
 const mongoose = require('mongoose');
 
 
-function validateAddTaskForm(payload) {
+function validateTaskForm(payload) {
     const errors = {};
     let isFormValid = true;
     let message = '';
@@ -44,9 +44,50 @@ async function index(user){
     }
 }
 
+async function isAuthorised(taskID,userID){
+
+    const task = await todo.findById({_id : taskID});
+
+    if(task.created_by != userID && task.associated_to != userID)   
+        return false;
+
+    return true;
+}
+
+async function isExist(taskID){
+
+    const task = await todo.findById({_id : taskID});
+    if(task == null)   
+        return false;
+
+    return true;
+}
+
+// show one task
+async function show(taskID,userID){
+    try{
+        if (!mongoose.Types.ObjectId.isValid(taskID))
+            return {success: false,status:404,message:'No Task Found'};
+
+        const task = await todo.findById({_id : taskID});
+        if (!task) 
+            return {success: false,status:404,message:'No Task Found'};
+
+        const authorised = await isAuthorised(taskID,userID)
+        if(!authorised)
+            return {success: false,status:403,message:'Forbiden'};
+
+        return {success: true,status:200,message:'task fetched',task};
+
+    }catch(err){
+        return {success: false,status:500,message:err};
+    }
+
+}
+
 async function store(data,userID){
     
-    const validationResult = validateAddTaskForm(data);
+    const validationResult = validateTaskForm(data);
 
     if(!validationResult.success)
         return {success : false,status :400,message : validationResult.message,errors: validationResult.errors};
@@ -64,45 +105,61 @@ async function store(data,userID){
         return {success : true,status :200,message:'Task saved',task:savedTask};
     }
     catch(err){
-        res.status(500).json({message : err});
+        return {success:false,status:200,message:err};
     }
 }
-// show one task
-async function show(taskID,userID){
+
+async function update(userID,taskID,newData){
+
+    const validationResult = validateTaskForm(newData);
+    if(!validationResult.success)
+        return {success : false,status:400,message : validationResult.message,errors: validationResult.errors};
+
     try{
         if (!mongoose.Types.ObjectId.isValid(taskID))
             return {success: false,status:404,message:'No Task Found'};
 
-        const id = new mongoose.Types.ObjectId(taskID);
-        const task = await todo.findById({_id : id});
-        if (!task) 
-            return {success: false,status:404,message:'No Task Found'};
+        const exist = await isExist(taskID)
+        if(!exist)
+        return {success: false,status:404,message:'No Task Found'};
 
-        if(task.created_by != userID && task.associated_to != userID)   
+        const authorised = await isAuthorised(taskID,userID)
+        if(!authorised)
             return {success: false,status:403,message:'Forbiden'};
 
-        return {success: true,status:200,message:'task fetched',task};
+        const task = await todo.updateOne({_id : taskID},{$set:newData});
 
-    }catch(err){
+        return {success: true,status:200,message:'task updated',task};
+    }
+    catch(err){
+      return {success:false,status:500,message:err};
+    }
+}
+
+async function destroy(userID,taskID){
+
+    try{
+        const exist = await isExist(taskID);
+        if(!exist)
+        return {success: false,status:404,message:'No Task Found'};
+
+        const authorised = await isAuthorised(taskID,userID)
+        if(!authorised)
+            return {success: false,status:403,message:'Forbiden'};
+
+        const task = await todo.findOneAndRemove(taskID);
+
+        return {success: true,status:200,task,message:'Task deleted Successfully'};
+    }
+    catch(err){
         return {success: false,status:500,message:err};
     }
-
-}
-
-function edit(){
-
-}
-
-function update(){
-
-}
-
-function destroy(){
-
 }
 
 module.exports = {
     index,
     show,
-    store
+    store,
+    update,
+    destroy
 }

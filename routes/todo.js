@@ -19,41 +19,22 @@ router.get('/todos/:taskId',async (req,res)=>{
 
 // add new task
 router.post('/todos',async (req,res)=>{
-    console.log('add route');
-    console.log(req.body);
-
     const result = await todo.store(req.body,req.user.id);
     return res.status(result.status).json(result);
 })
 
 //update task
 router.patch('/todos/:taskId',async (req,res)=>{
-    
-    try{
-        todo.updateOne({_id : req.params.taskId},{$set:req.body},function(err,result){
-            if(err) res.status(500).json(err);
-            console.log(result);
-            res.status(200).json(result); 
-        });
-
-       
-    }
-    catch(err){
-        res.status(500).json(err);
-    }
+    const result = await todo.update(req.user.id,req.params.taskId,req.body);
+    return res.status(result.status).json(result);
 })
 
 //delete task
 router.delete('/todos/:taskId',async (req,res)=>{
 
-    try{
-        const task = await todo.findByIdAndDelete(req.params.taskId);
-        if (!task) res.status(404).send("No Task Found");
-        res.status(200).send({id:req.params.taskId, message:"Task deleted Successfully"});
-    }
-    catch(err){
-        res.status(500).json({message : err})
-    }
+    const result = await todo.destroy(req.user.id,req.params.taskId);
+    return res.status(result.status).json(result);
+
 })
 
 module.exports = router;
