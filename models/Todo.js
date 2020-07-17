@@ -17,7 +17,7 @@ const TodoSchema = mongoose.Schema({
         type: mongoose.Types.ObjectId, ref: 'User',    
     },
     associated_to : {
-        type: Number,
+        type: mongoose.Types.ObjectId, ref: 'User',
         required : false
     },
     created_at : {

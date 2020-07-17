@@ -29,6 +29,48 @@ function validateTaskForm(payload) {
     };
 }
 
+async function isUserExist(userID){
+    try{
+        const user = await user.findById({_id : userID});
+        console.log(user);
+        if(!user)
+            return false;
+        return true
+    }
+    catch(err){
+        return false;
+    } 
+}
+
+async function isAuthorised(taskID,userID){
+    try{
+        const task = await todo.findById({_id : taskID});
+
+        if(task.created_by != userID && task.associated_to != userID)   
+            return false;
+    
+        return true;
+    }
+    catch(err){
+        return false
+    }
+    
+}
+
+async function isExist(taskID){
+    try{
+        const task = await todo.findById({_id : taskID});
+        if(task == null)   
+            return false;
+    
+        return true;
+    }
+    catch(err){
+        return false;
+    }
+    
+}
+
 //get all tasks
 async function index(user){
 
@@ -44,24 +86,7 @@ async function index(user){
     }
 }
 
-async function isAuthorised(taskID,userID){
 
-    const task = await todo.findById({_id : taskID});
-
-    if(task.created_by != userID && task.associated_to != userID)   
-        return false;
-
-    return true;
-}
-
-async function isExist(taskID){
-
-    const task = await todo.findById({_id : taskID});
-    if(task == null)   
-        return false;
-
-    return true;
-}
 
 // show one task
 async function show(taskID,userID){
@@ -91,6 +116,9 @@ async function store(data,userID){
 
     if(!validationResult.success)
         return {success : false,status :400,message : validationResult.message,errors: validationResult.errors};
+
+    if(!mongoose.Types.ObjectId.isValid(data.associated_to) || !isUserExist(data.associated_to))
+        return {success:false,status:400,message:"User associated_to does not exist"};
 
     const todoData = new todo({
         title         : data.title,
